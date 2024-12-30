@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from core.routers.health import router as health_router
 from core.routers.avatar import router as avatar_router
+from core.flows import prepare_models_flow
 from utils import setup_logger
 from settings import settings
 from models.errors import S3ListError, S3DownloadError, UnzipError, DataValidationError, CudaError
@@ -27,8 +28,7 @@ logger = setup_logger(name="avatar")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        # TODO: prepare all models
-        # app.state.models = prepare()
+        app.state.models = prepare_models_flow()
         logger.info("App initialization completed.")
         yield
     except Exception as e:
@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
     finally:
         try:
             logger.info("Application is shutting down...")
+            del app.state.models  # clean up models
         except Exception as e:
             logger.error(f"Error: exception during shutdown: {e}")
 
